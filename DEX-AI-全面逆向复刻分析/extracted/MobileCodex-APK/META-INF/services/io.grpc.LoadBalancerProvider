@@ -1,0 +1,4 @@
+io.grpc.util.SecretRoundRobinLoadBalancerProvider$Provider
+io.grpc.util.OutlierDetectionLoadBalancerProvider
+io.grpc.util.RandomSubsettingLoadBalancerProvider
+io.grpc.internal.PickFirstLoadBalancerProvider

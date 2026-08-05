@@ -1,0 +1,66 @@
+{
+  "id": "deecodex-desktop-sync",
+  "name": "Mobile Codex 多机同步组件",
+  "version": "0.1.9",
+  "description": "Mobile Codex 的内部多机同步组件，由账号页面统一展示和操作",
+  "author": "DEX AI",
+  "kind": "integration",
+  "tags": [
+    "desktop-sync",
+    "codex",
+    "p2p",
+    "internal-component"
+  ],
+  "first_party": true,
+  "lifecycle": {
+    "autostart": "manual",
+    "requires_gateway": false,
+    "restart_policy": "on_failure",
+    "shutdown_timeout_ms": 10000
+  },
+  "entry": {
+    "runtime": "binary",
+    "script": "mobile-codex-desktop-sync-plugin"
+  },
+  "permissions": [
+    "network",
+    "secrets"
+  ],
+  "features": [
+    {
+      "id": "desktop-sync",
+      "kind": "automation",
+      "label": "多机同步",
+      "description": "使用 Mobile Codex 同一账号，从另一台在线电脑安全同步本机已有项目的会话",
+      "methods": {
+        "status": "desktop_sync.status",
+        "peers": "desktop_sync.peers",
+        "sync": "desktop_sync.pull"
+      },
+      "params_schema": {
+        "status": {
+          "type": "object",
+          "properties": {},
+          "required": []
+        },
+        "peers": {
+          "type": "object",
+          "properties": {},
+          "required": []
+        },
+        "sync": {
+          "type": "object",
+          "properties": {
+            "deviceId": {
+              "type": "string",
+              "title": "同步源电脑",
+              "description": "选择一台在线电脑，将它的会话同步到本机"
+            }
+          },
+          "required": []
+        }
+      }
+    }
+  ],
+  "min_deecodex_version": "0.1.0"
+}

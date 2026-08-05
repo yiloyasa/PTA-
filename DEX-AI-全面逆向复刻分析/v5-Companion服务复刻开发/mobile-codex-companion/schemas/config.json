@@ -1,0 +1,23 @@
+{
+  "listen_addr": "0.0.0.0:7443",
+  "auth_token": "GxlpQBCJBue5gCXgMcV2famulqhrtog0mklXKIHZAYA",
+  "chatgpt_app": "C:\\Program Files\\WindowsApps\\OpenAI.Codex_26.727.6591.0_x64__2p2nqsd0c76g0\\app",
+  "artifact_directory_names": [
+    "artifacts",
+    "screenshots",
+    "outputs"
+  ],
+  "browser_proxy_addr": "0.0.0.0:7444",
+  "expected_codex_version": "codex-cli 0.146.0-alpha.3.1",
+  "notifier_url": null,
+  "notifier_admin_token": null,
+  "control_plane_url": "https://api.liguan.me/mobile-codex",
+  "control_plane_issuer": "https://api.liguan.me/mobile-codex",
+  "control_plane_jwt_public_key": "ScJI1gv5B3fh334jzryzc1XHwQny6PeOkoM2-_RrrFA",
+  "device_id": "85189c6a-da8f-47bd-ac3d-e9e50b5a4c44",
+  "account_id": "e8e52adb-37bb-449b-bff8-0f17569d3a47",
+  "device_credential": null,
+  "device_public_key": "LzWk3zoff-aZ7dkjDzUQdadX3nULhqs_X9WzlwJRnBg",
+  "headscale_login_server": "https://headscale.dex.liguan.me",
+  "netd_binary": null
+}

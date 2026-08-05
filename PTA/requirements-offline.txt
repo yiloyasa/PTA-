@@ -1,0 +1,5 @@
+﻿# PTA 离线翻译引擎依赖
+# Python 3.13 Windows x64
+torch>=2.6
+transformers>=4.40
+huggingface_hub>=0.23

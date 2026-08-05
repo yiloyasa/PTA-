@@ -1,0 +1,21 @@
+{
+  "name": "mobile-codex-companion",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
+    "multicast-dns": "^7.2.5",
+    "selfsigned": "^5.5.0",
+    "uuid": "^14.0.1",
+    "ws": "^8.21.2"
+  }
+}

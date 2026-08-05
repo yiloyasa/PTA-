@@ -1,0 +1,10 @@
+﻿__pycache__/
+*.pyc
+*.pyo
+*.log
+config/config.json
+logs/
+版本备份/
+.env
+assets/nllb-200-distilled-600M/
+libs/

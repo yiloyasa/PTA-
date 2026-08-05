@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DEX AI 管理面板</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#0f0f1a;color:#e0e0e0;height:100vh;display:flex}
+.sidebar{width:260px;background:#1a1a2e;border-right:1px solid #2a2a4a;display:flex;flex-direction:column}
+.sidebar-header{padding:20px;border-bottom:1px solid #2a2a4a}
+.sidebar-header h1{color:#e94560;font-size:18px}
+.nav-item{padding:10px 14px;border-radius:8px;cursor:pointer;margin-bottom:4px;display:flex;align-items:center;gap:10px;font-size:14px}
+.nav-item:hover{background:#2a2a4a}
+.nav-item.active{background:#e94560;color:#fff}
+.status-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}
+.status-dot.online{background:#4ade80}
+.status-dot.offline{background:#666}
+.main{flex:1;display:flex;flex-direction:column}
+.topbar{padding:16px 24px;border-bottom:1px solid #2a2a4a;display:flex;align-items:center;justify-content:space-between}
+.btn{padding:6px 14px;border-radius:6px;border:none;cursor:pointer;font-size:12px}
+.btn-primary{background:#e94560;color:#fff}
+.btn-secondary{background:#2a2a4a;color:#e0e0e0}
+.content{flex:1;padding:24px;overflow-y:auto;display:none}
+.content.active{display:block}
+.card{background:#1a1a2e;border-radius:10px;padding:16px;margin-bottom:16px;border:1px solid #2a2a4a}
+.card h3{font-size:14px;margin-bottom:12px;color:#e94560}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.stat-card{padding:16px;border-radius:8px;background:#1e1e3a;text-align:center}
+.stat-card .value{font-size:24px;font-weight:bold;color:#e94560}
+.stat-card .label{font-size:12px;color:#888;margin-top:4px}
+.message{margin-bottom:16px;display:flex}
+.message.user{justify-content:flex-end}
+.message.assistant{justify-content:flex-start}
+.message-bubble{max-width:75%;padding:12px 16px;border-radius:12px;font-size:14px;line-height:1.5}
+.message.user .message-bubble{background:#e94560;color:#fff}
+.message.assistant .message-bubble{background:#1e1e3a;border:1px solid #2a2a4a}
+.chat-input{display:flex;gap:8px;padding:12px 0;border-top:1px solid #2a2a4a}
+.chat-input textarea{flex:1;padding:10px;border-radius:8px;border:1px solid #2a2a4a;background:#1a1a2e;color:#e0e0e0;resize:none;min-height:44px;font-size:14px}
+</style>
+</head>
+<body>
+<div class="sidebar">
+<div class="sidebar-header"><h1>DEX AI</h1><p>复刻版 v1.0</p></div>
+<div class="nav-item active" onclick="switchTab('dashboard')"><span>📊</span><span>仪表盘</span></div>
+<div class="nav-item" onclick="switchTab('chat')"><span>💬</span><span>对话</span></div>
+<div class="nav-item" onclick="switchTab('devices')"><span>📱</span><span>手机设备</span></div>
+<div class="nav-item" onclick="switchTab('rpc')"><span>🔌</span><span>RPC 测试</span></div>
+<div class="nav-item" onclick="switchTab('settings')"><span>⚙️</span><span>设置</span></div>
+<div style="margin-top:auto;padding:12px;border-top:1px solid #2a2a4a;font-size:12px">
+<div><span class="status-dot online" id="companionStatus"></span> Companion</div>
+<div><span class="status-dot online" id="controlStatus"></span> 控制平面</div>
+</div>
+</div>
+
+<div class="main">
+<div class="topbar"><h2 id="pageTitle">仪表盘</h2>
+<div>
+<button class="btn btn-secondary" onclick="refreshAll()">🔄 刷新</button>
+</div>
+</div>
+
+<div class="content active" id="tab-dashboard">
+<div class="card-grid">
+<div class="stat-card"><div class="value" id="statThreads">0</div><div class="label">线程</div></div>
+<div class="stat-card"><div class="value" id="statDevices">0</div><div class="label">已配对设备</div></div>
+<div class="stat-card"><div class="value">126</div><div class="label">RPC 方法</div></div>
+</div>
+<div class="card"><h3>服务状态</h3><p id="serviceStatus">正在检测...</p></div>
+<div class="card"><h3>快速操作</h3>
+<button class="btn btn-primary" onclick="quickRpc('initialize',{})">初始化</button>
+<button class="btn btn-secondary" onclick="quickRpc('model/list',{})" style="margin-left:8px">模型列表</button>
+<button class="btn btn-secondary" onclick="quickRpc('environment/info',{})" style="margin-left:8px">环境信息</button>
+</div>
+</div>
+
+<div class="content" id="tab-chat">
+<div id="chatMessages" style="flex:1;overflow-y:auto;padding:16px 0"></div>
+<div class="chat-input">
+<textarea id="messageInput" placeholder="输入消息... (Enter 发送)" rows="2"></textarea>
+<button class="btn btn-primary" onclick="sendMessage()" style="white-space:nowrap">发送</button>
+</div>
+</div>
+
+<div class="content" id="tab-devices">
+<div id="deviceContent" style="padding:16px 0">
+<div class="card"><h3>设备配对</h3>
+<button class="btn btn-primary" onclick="startPairing()">生成配对码</button>
+<div id="pairingCode" style="text-align:center;padding:20px;font-size:48px;font-weight:bold;color:#e94560;letter-spacing:8px;display:none"></div>
+</div>
+</div>
+</div>
+
+<div class="content" id="tab-rpc">
+<div class="card"><h3>RPC 方法测试</h3>
+<select id="rpcMethodSelect" style="width:100%;padding:8px;margin-bottom:8px;background:#1e1e3a;color:#e0e0e0;border:1px solid #2a2a4a;border-radius:6px;font-size:13px"></select>
+<textarea id="rpcParams" rows="4" style="width:100%;padding:8px;margin-bottom:8px;background:#1e1e3a;color:#e0e0e0;border:1px solid #2a2a4a;border-radius:6px;font-family:monospace;font-size:12px" placeholder='{}'></textarea>
+<button class="btn btn-primary" onclick="testRpc()">发送请求</button>
+<pre id="rpcResult" style="margin-top:8px;padding:12px;background:#0a0a14;border-radius:6px;font-size:12px;white-space:pre-wrap;max-height:400px;overflow-y:auto"></pre>
+</div>
+</div>
+
+<div class="content" id="tab-settings">
+<div class="card"><h3>控制平面</h3>
+<input id="loginEmail" placeholder="邮箱" style="width:100%;padding:8px;margin-bottom:8px;background:#1e1e3a;color:#e0e0e0;border:1px solid #2a2a4a;border-radius:6px" value="test@test.com">
+<input id="loginPassword" type="password" placeholder="密码" style="width:100%;padding:8px;margin-bottom:8px;background:#1e1e3a;color:#e0e0e0;border:1px solid #2a2a4a;border-radius:6px" value="123456">
+<button class="btn btn-primary" onclick="register()">注册</button>
+<button class="btn btn-secondary" onclick="login()" style="margin-left:8px">登录</button>
+<div id="authResult" style="margin-top:8px;font-size:12px;color:#666"></div>
+</div>
+</div>
+</div>
+
+<script>
+const METHODS = ["initialize","account/read","thread/list","thread/start","thread/read","thread/archive","thread/delete","thread/search","thread/turns/list","thread/items/list","thread/goal/set","thread/goal/get","model/list","config/read","config/value/write","fs/readFile","fs/writeFile","fs/readDirectory","fs/createDirectory","fs/remove","fs/copy","fs/getMetadata","command/exec","command/exec/write","command/exec/terminate","process/spawn","process/kill","remoteControl/enable","remoteControl/disable","remoteControl/status/read","remoteControl/pairing/start","remoteControl/pairing/status","remoteControl/client/list","environment/info","environment/status","plugin/list","plugin/installed","plugin/install","plugin/uninstall","feedback/upload","skills/list","fuzzyFileSearch","review/start","memory/reset","turn/start","turn/interrupt","app/read","marketplace/add","mcpServer/tool/call","mcpServer/resource/read","experimentalFeature/list","permissionProfile/list","collaborationMode/list","hooks/list"];
+
+document.addEventListener("DOMContentLoaded", () => {
+    const sel = document.getElementById("rpcMethodSelect");
+    METHODS.forEach(m => { const o = document.createElement("option"); o.value = m; o.textContent = m; sel.appendChild(o); });
+    refreshAll();
+    setInterval(checkStatus, 5000);
+    document.getElementById("messageInput").addEventListener("keydown", e => {
+        if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+    });
+});
+
+async function callRpc(method, params) {
+    const r = await fetch("/api/companion", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ jsonrpc: "2.0", id: Date.now(), method, params: params || {} })
+    });
+    const d = await r.json();
+    if (d.error) throw new Error(d.error.message);
+    return d.result;
+}
+
+function switchTab(name) {
+    document.querySelectorAll(".content").forEach(c => c.classList.remove("active"));
+    document.querySelectorAll(".nav-item").forEach(n => n.classList.remove("active"));
+    document.getElementById("tab-" + name).classList.add("active");
+    event.currentTarget.classList.add("active");
+    const titles = { dashboard:"仪表盘", chat:"对话", devices:"手机设备", rpc:"RPC 测试", settings:"设置" };
+    document.getElementById("pageTitle").textContent = titles[name] || name;
+}
+
+async function refreshDashboard() {
+    try {
+        const r = await callRpc("initialize", {});
+        document.getElementById("serviceStatus").textContent = "Companion v" + r.version + " | 能力: " + r.capabilities.join(", ");
+    } catch(e) {
+        document.getElementById("serviceStatus").textContent = "离线: " + e.message;
+    }
+}
+
+async function checkStatus() {
+    try {
+        await callRpc("initialize", {});
+        document.getElementById("companionStatus").className = "status-dot online";
+    } catch { 
+        document.getElementById("companionStatus").className = "status-dot offline"; 
+    }
+    try {
+        await fetch("/api/control/health").then(r => r.json());
+        document.getElementById("controlStatus").className = "status-dot online";
+    } catch {
+        document.getElementById("controlStatus").className = "status-dot offline";
+    }
+}
+
+async function refreshAll() {
+    refreshDashboard();
+    try {
+        const r = await callRpc("remoteControl/status/read", {});
+        document.getElementById("statDevices").textContent = r.pairedDevices || 0;
+    } catch {}
+}
+
+async function quickRpc(method, params) {
+    try {
+        const r = await callRpc(method, params);
+        document.getElementById("serviceStatus").textContent = JSON.stringify(r).substring(0, 100);
+    } catch(e) {
+        document.getElementById("serviceStatus").textContent = "错误: " + e.message;
+    }
+}
+
+function sendMessage() {
+    const input = document.getElementById("messageInput");
+    const text = input.value.trim();
+    if (!text) return;
+    addMessage("user", text);
+    input.value = "";
+    setTimeout(() => addMessage("assistant", "AI 功能开发中...
+
+已收到: " + text), 500);
+}
+
+function addMessage(role, text) {
+    const chat = document.getElementById("chatMessages");
+    const div = document.createElement("div");
+    div.className = "message " + role;
+    div.innerHTML = '<div class="message-bubble">' + text.replace(/\n/g, "<br>") + "</div>";
+    chat.appendChild(div);
+    chat.scrollTop = chat.scrollHeight;
+}
+
+async function startPairing() {
+    try {
+        const r = await callRpc("remoteControl/pairing/start", {});
+        document.getElementById("pairingCode").style.display = "block";
+        document.getElementById("pairingCode").textContent = r.pairingCode;
+    } catch(e) {
+        alert("错误: " + e.message);
+    }
+}
+
+async function testRpc() {
+    const method = document.getElementById("rpcMethodSelect").value;
+    let params = {};
+    try { params = JSON.parse(document.getElementById("rpcParams").value || "{}"); } catch {}
+    document.getElementById("rpcResult").textContent = "发送中...";
+    try {
+        const r = await callRpc(method, params);
+        document.getElementById("rpcResult").textContent = JSON.stringify(r, null, 2);
+    } catch(e) {
+        document.getElementById("rpcResult").textContent = "错误: " + e.message;
+    }
+}
+
+async function register() {
+    const email = document.getElementById("loginEmail").value || "test@test.com";
+    const pw = document.getElementById("loginPassword").value || "123456";
+    try {
+        const r = await fetch("/api/control/v1/auth/register", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password: pw, name: email.split("@")[0] })
+        }).then(r => r.json());
+        document.getElementById("authResult").textContent = "注册成功! Token: " + (r.accessToken || "").substring(0, 20) + "...";
+    } catch(e) {
+        document.getElementById("authResult").textContent = "失败: " + e.message;
+    }
+}
+
+async function login() {
+    const email = document.getElementById("loginEmail").value || "test@test.com";
+    const pw = document.getElementById("loginPassword").value || "123456";
+    try {
+        const r = await fetch("/api/control/v1/auth/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password: pw })
+        }).then(r => r.json());
+        document.getElementById("authResult").textContent = "登录成功! Token: " + (r.accessToken || "").substring(0, 20) + "...";
+    } catch(e) {
+        document.getElementById("authResult").textContent = "失败: " + e.message;
+    }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,539 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <link rel="stylesheet" href="vendor/xterm/xterm.css">
+  <style>
+    @font-face {
+      font-family: "JetBrains Mono";
+      src: url("vendor/fonts/JetBrainsMono-Regular.woff2") format("woff2");
+      font-style: normal;
+      font-weight: 400;
+      font-display: block;
+    }
+    @font-face {
+      font-family: "JetBrains Mono";
+      src: url("vendor/fonts/JetBrainsMono-Bold.woff2") format("woff2");
+      font-style: normal;
+      font-weight: 700;
+      font-display: block;
+    }
+    :root {
+      color-scheme: dark;
+      --terminal-bg: #000000;
+      --terminal-header: #000000;
+      --terminal-text: #e7eaf0;
+      --terminal-muted: #9aa4b2;
+      --terminal-outline: #2d333b;
+      --terminal-accent: #72b7ff;
+      --terminal-on-accent: #08243f;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100vh;
+      min-height: 100vh;
+      overflow: hidden;
+      background: var(--terminal-bg);
+      color: var(--terminal-text);
+    }
+    body {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+    #terminal {
+      flex: 1 1 0;
+      min-height: 0;
+      width: 100%;
+      position: relative;
+      padding: 4px 6px 0;
+      background: var(--terminal-bg);
+    }
+    #terminal .xterm,
+    #terminal .xterm-viewport {
+      height: 100%;
+    }
+    #terminal,
+    #terminal .xterm,
+    #terminal .xterm-viewport {
+      touch-action: none;
+      overscroll-behavior: contain;
+    }
+    /* xterm 6 uses a VS Code-style DOM scrollbar rather than the viewport's
+       native scrollbar. Hide both implementations and render the compact
+       HyperOS indicator below. */
+    #terminal .xterm-viewport {
+      scrollbar-width: none;
+    }
+    #terminal .xterm-viewport::-webkit-scrollbar {
+      display: none;
+      width: 0;
+      height: 0;
+    }
+    #terminal .xterm-scrollable-element > .scrollbar,
+    #terminal .xterm-scrollable-element > .shadow {
+      display: none !important;
+    }
+    .terminal-scroll-indicator {
+      position: absolute;
+      z-index: 4;
+      top: 6px;
+      right: 4px;
+      width: 2px;
+      min-height: 18px;
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--terminal-muted) 42%, transparent);
+      opacity: 0;
+      pointer-events: none;
+      transform-origin: center;
+      transition: opacity 180ms ease;
+    }
+    #keys {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      grid-template-rows: repeat(2, 34px);
+      flex: none;
+      gap: 0;
+      padding: 2px 4px;
+      overflow: hidden;
+      touch-action: none;
+      background: var(--terminal-bg);
+    }
+    #keys button {
+      min-width: 0;
+      height: 34px;
+      padding: 0 2px;
+      border: 0;
+      border-radius: 7px;
+      background: var(--terminal-bg);
+      color: var(--terminal-text);
+      font: 500 13px "JetBrains Mono", monospace;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      touch-action: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    #keys button.symbol {
+      font-size: 20px;
+      font-weight: 400;
+      line-height: 1;
+    }
+    #keys button.menu-key {
+      display: grid;
+      place-items: center;
+    }
+    .menu-icon,
+    .menu-icon::before,
+    .menu-icon::after {
+      display: block;
+      width: 18px;
+      height: 2px;
+      border-radius: 999px;
+      background: currentColor;
+    }
+    .menu-icon {
+      position: relative;
+    }
+    .menu-icon::before,
+    .menu-icon::after {
+      position: absolute;
+      left: 0;
+      content: "";
+    }
+    .menu-icon::before { top: -6px; }
+    .menu-icon::after { top: 6px; }
+    #keys button.pressed {
+      background: color-mix(in srgb, var(--terminal-muted) 20%, transparent);
+    }
+    #keys button.active {
+      background: var(--terminal-accent);
+      color: var(--terminal-on-accent);
+    }
+    body.input-disabled #keys { display: none; }
+  </style>
+</head>
+<body class="input-disabled">
+<div id="terminal" aria-label="终端"></div>
+<div id="keys" aria-label="终端快捷键">
+  <button type="button" tabindex="-1" data-sequence="1b">Esc</button>
+  <button type="button" tabindex="-1" data-text="/" class="symbol">/</button>
+  <button type="button" tabindex="-1" data-menu class="menu-key" aria-label="终端菜单">
+    <span class="menu-icon" aria-hidden="true"></span>
+  </button>
+  <button type="button" tabindex="-1" data-sequence="1b5b48">Home</button>
+  <button type="button" tabindex="-1" data-sequence="1b5b41" class="symbol">↑</button>
+  <button type="button" tabindex="-1" data-sequence="1b5b46">End</button>
+  <button type="button" tabindex="-1" data-sequence="1b5b357e">PgUp</button>
+  <button type="button" tabindex="-1" data-sequence="09">Tab</button>
+  <button type="button" tabindex="-1" data-control>Ctrl</button>
+  <button type="button" tabindex="-1" data-alt>Alt</button>
+  <button type="button" tabindex="-1" data-sequence="1b5b44" class="symbol">←</button>
+  <button type="button" tabindex="-1" data-sequence="1b5b42" class="symbol">↓</button>
+  <button type="button" tabindex="-1" data-sequence="1b5b43" class="symbol">→</button>
+  <button type="button" tabindex="-1" data-sequence="1b5b367e">PgDn</button>
+</div>
+<script src="vendor/xterm/xterm.js"></script>
+<script src="vendor/xterm/addon-fit.js"></script>
+<script>
+(async () => {
+  const terminalElement = document.getElementById("terminal");
+  const keys = document.getElementById("keys");
+  const controlButton = keys.querySelector("[data-control]");
+  const encoder = new TextEncoder();
+  const DEFAULT_FONT_SIZE = 12;
+  const MIN_FONT_SIZE = 10;
+  const MAX_FONT_SIZE = 18;
+  // 80 columns forced the portrait terminal down to 8px. At that size the
+  // block-element glyphs used by Claude's logo land on fractional device
+  // pixels and develop visible seams. 64 columns keeps the font at 10px on
+  // the Xiaomi validation device, producing integer-width glyph cells while
+  // retaining a useful terminal layout.
+  const PREFERRED_COLUMNS = 64;
+  let inputEnabled = false;
+  let controlMode = false;
+  let altMode = false;
+  let preferredColumnsApplied = false;
+
+  if (document.fonts && document.fonts.load) {
+    await Promise.all([
+      document.fonts.load('400 12px "JetBrains Mono"'),
+      document.fonts.load('700 12px "JetBrains Mono"')
+    ]);
+  }
+
+  const terminal = new Terminal({
+    allowProposedApi: false,
+    convertEol: false,
+    customGlyphs: true,
+    cursorBlink: true,
+    cursorStyle: "bar",
+    cursorWidth: 2,
+    disableStdin: true,
+    drawBoldTextInBrightColors: true,
+    fontFamily: '"JetBrains Mono", monospace',
+    fontSize: DEFAULT_FONT_SIZE,
+    fontWeight: "400",
+    fontWeightBold: "700",
+    letterSpacing: 0,
+    // Block-element artwork such as Claude's logo assumes the font's native
+    // cell height. Extra leading stretches the artwork vertically.
+    lineHeight: 1,
+    scrollback: 5000,
+    theme: {
+      background: "#000000",
+      foreground: "#e7eaf0",
+      cursor: "#72b7ff",
+      cursorAccent: "#08243f",
+      selectionBackground: "#264f78",
+      black: "#111827",
+      red: "#ef4444",
+      green: "#22c55e",
+      yellow: "#eab308",
+      blue: "#3b82f6",
+      magenta: "#a855f7",
+      cyan: "#06b6d4",
+      white: "#d1d5db",
+      brightBlack: "#6b7280",
+      brightRed: "#f87171",
+      brightGreen: "#4ade80",
+      brightYellow: "#facc15",
+      brightBlue: "#60a5fa",
+      brightMagenta: "#c084fc",
+      brightCyan: "#22d3ee",
+      brightWhite: "#f9fafb"
+    }
+  });
+  const fitAddon = new FitAddon.FitAddon();
+  terminal.loadAddon(fitAddon);
+  terminal.open(terminalElement);
+  const scrollIndicator = document.createElement("div");
+  scrollIndicator.className = "terminal-scroll-indicator";
+  terminalElement.appendChild(scrollIndicator);
+  let scrollIndicatorTimer = null;
+  const helperTextarea = terminalElement.querySelector(".xterm-helper-textarea");
+  if (helperTextarea) {
+    helperTextarea.setAttribute("inputmode", "url");
+    helperTextarea.setAttribute("enterkeyhint", "enter");
+    helperTextarea.setAttribute("autocomplete", "off");
+    helperTextarea.setAttribute("autocorrect", "off");
+    helperTextarea.setAttribute("autocapitalize", "none");
+    helperTextarea.setAttribute("spellcheck", "false");
+  }
+
+  function sendBytes(bytes) {
+    let binary = "";
+    bytes.forEach(value => binary += String.fromCharCode(value));
+    AndroidTerminal.sendInput(btoa(binary));
+  }
+
+  function sendText(value) {
+    if (value) sendBytes(encoder.encode(value));
+  }
+
+  function setControlMode(enabled) {
+    controlMode = enabled;
+    controlButton.classList.toggle("active", enabled);
+  }
+
+  function setAltMode(enabled) {
+    altMode = enabled;
+    keys.querySelector("[data-alt]").classList.toggle("active", enabled);
+  }
+
+  function controlSequence(value) {
+    const chars = Array.from(value);
+    if (chars.length !== 1) return null;
+    const code = chars[0].toUpperCase().charCodeAt(0);
+    if (code < 64 || code > 95) return null;
+    return String.fromCharCode(code & 31);
+  }
+
+  terminal.onData(value => {
+    if (controlMode) {
+      const control = controlSequence(value);
+      if (control !== null) {
+        sendText(altMode ? `\x1b${control}` : control);
+        setControlMode(false);
+        setAltMode(false);
+        return;
+      }
+      setControlMode(false);
+    }
+    sendText(altMode ? `\x1b${value}` : value);
+    setAltMode(false);
+  });
+
+  terminal.onResize(({rows, cols}) => {
+    AndroidTerminal.resize(rows, cols);
+    updateScrollIndicator(false);
+  });
+
+  terminal.onScroll(() => updateScrollIndicator(true));
+
+  function updateScrollIndicator(show) {
+    const buffer = terminal.buffer.active;
+    const totalRows = buffer.baseY + terminal.rows;
+    if (buffer.baseY <= 0 || totalRows <= terminal.rows) {
+      scrollIndicator.style.opacity = "0";
+      return;
+    }
+    const trackInset = 6;
+    const trackHeight = Math.max(1, terminalElement.clientHeight - trackInset * 2);
+    const thumbHeight =
+      Math.max(18, Math.round(trackHeight * terminal.rows / totalRows));
+    const progress = buffer.viewportY / Math.max(1, buffer.baseY);
+    const top = trackInset + Math.round((trackHeight - thumbHeight) * progress);
+    scrollIndicator.style.height = `${thumbHeight}px`;
+    scrollIndicator.style.transform = `translateY(${top - trackInset}px)`;
+    if (show) {
+      scrollIndicator.style.opacity = "1";
+      clearTimeout(scrollIndicatorTimer);
+      scrollIndicatorTimer =
+        setTimeout(() => {
+          scrollIndicator.style.opacity = "0";
+        }, 560);
+    }
+  }
+
+  function fit() {
+    try {
+      const viewportHeight = Math.max(1, window.innerHeight);
+      document.documentElement.style.height = `${viewportHeight}px`;
+      document.body.style.height = `${viewportHeight}px`;
+      fitAddon.fit();
+      if (
+        !preferredColumnsApplied &&
+        terminalElement.clientWidth >= 240 &&
+        terminal.cols < PREFERRED_COLUMNS
+      ) {
+        const fittedFontSize =
+          Math.floor(
+            Math.max(
+              MIN_FONT_SIZE,
+              DEFAULT_FONT_SIZE * terminal.cols / PREFERRED_COLUMNS,
+            ) * 2,
+          ) / 2;
+        terminal.options.fontSize = fittedFontSize;
+        fitAddon.fit();
+        preferredColumnsApplied = true;
+      }
+      updateScrollIndicator(false);
+    } catch (_) {
+      // WebView 正在切换尺寸时等待下一次 ResizeObserver。
+    }
+  }
+
+  function focusInputFromAndroid() {
+    terminal.focus();
+    return terminal.element?.contains(document.activeElement) === true;
+  }
+
+  function focusInput(requestKeyboard = false) {
+    if (!inputEnabled) return false;
+    focusInputFromAndroid();
+    if (
+      requestKeyboard &&
+      typeof AndroidTerminal !== "undefined" &&
+      typeof AndroidTerminal.requestKeyboard === "function"
+    ) {
+      AndroidTerminal.requestKeyboard();
+    }
+    return terminal.element?.contains(document.activeElement) === true;
+  }
+
+  function activateKey(button) {
+    if (button.hasAttribute("data-menu")) {
+      if (
+        typeof AndroidTerminal !== "undefined" &&
+        typeof AndroidTerminal.requestMenu === "function"
+      ) {
+        AndroidTerminal.requestMenu();
+      }
+      focusInput(true);
+      return;
+    }
+    if (button.hasAttribute("data-font")) {
+      preferredColumnsApplied = true;
+      const current = terminal.options.fontSize || DEFAULT_FONT_SIZE;
+      terminal.options.fontSize = Math.max(
+        MIN_FONT_SIZE,
+        Math.min(MAX_FONT_SIZE, current + (button.dataset.font === "+" ? 1 : -1)),
+      );
+      fit();
+      focusInput(true);
+      return;
+    }
+    if (button.hasAttribute("data-control")) {
+      setControlMode(!controlMode);
+    } else if (button.hasAttribute("data-alt")) {
+      setAltMode(!altMode);
+    } else {
+      const hex = button.dataset.sequence || "";
+      if (hex) {
+        const bytes = new Uint8Array(hex.length / 2);
+        for (let index = 0; index < bytes.length; index++) {
+          bytes[index] = parseInt(hex.slice(index * 2, index * 2 + 2), 16);
+        }
+        sendBytes(bytes);
+      } else if (button.dataset.text) {
+        sendText(button.dataset.text);
+      }
+    }
+    focusInput(true);
+  }
+
+  const keyPointers = new Map();
+  keys.addEventListener("pointerdown", event => {
+    const button = event.target.closest("button");
+    if (!button) return;
+    event.preventDefault();
+    keyPointers.set(event.pointerId, {
+      button,
+      x: event.clientX,
+      y: event.clientY
+    });
+    button.classList.add("pressed");
+  });
+  keys.addEventListener("pointerup", event => {
+    event.preventDefault();
+    const gesture = keyPointers.get(event.pointerId);
+    keyPointers.delete(event.pointerId);
+    if (!gesture) return;
+    gesture.button.classList.remove("pressed");
+    const distance =
+      Math.hypot(event.clientX - gesture.x, event.clientY - gesture.y);
+    if (distance < 8) activateKey(gesture.button);
+  });
+  keys.addEventListener("pointercancel", event => {
+    event.preventDefault();
+    const gesture = keyPointers.get(event.pointerId);
+    keyPointers.delete(event.pointerId);
+    gesture?.button.classList.remove("pressed");
+  });
+  keys.addEventListener("click", event => event.preventDefault());
+
+  let terminalTouch = null;
+  terminalElement.addEventListener("touchstart", event => {
+    if (event.touches.length !== 1) {
+      terminalTouch = null;
+      return;
+    }
+    const y = event.touches[0].clientY;
+    terminalTouch = {startY: y, lastY: y, moved: false};
+  }, {passive: true});
+  terminalElement.addEventListener("touchmove", event => {
+    if (!terminalTouch || event.touches.length !== 1) return;
+    const y = event.touches[0].clientY;
+    const total = y - terminalTouch.startY;
+    const delta = terminalTouch.lastY - y;
+    if (Math.abs(total) >= 6) {
+      terminalTouch.moved = true;
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    const rows = Math.trunc(delta / 16);
+    if (rows !== 0) {
+      terminal.scrollLines(rows);
+      terminalTouch.lastY = y;
+    }
+  }, {passive: false});
+  terminalElement.addEventListener("touchend", () => {
+    const shouldFocus = terminalTouch && !terminalTouch.moved;
+    terminalTouch = null;
+    if (shouldFocus) focusInput(true);
+  });
+  terminalElement.addEventListener("touchcancel", () => {
+    terminalTouch = null;
+  });
+  new ResizeObserver(fit).observe(terminalElement);
+  window.addEventListener("resize", fit);
+
+  window.mobileTerminal = {
+    writeBase64(value) {
+      const raw = atob(value);
+      terminal.write(
+        Uint8Array.from(raw, character => character.charCodeAt(0)),
+        () => updateScrollIndicator(false),
+      );
+    },
+    inputBase64(value) {
+      AndroidTerminal.sendInput(value);
+    },
+    getText() {
+      const buffer = terminal.buffer.active;
+      const lines = [];
+      for (let index = 0; index < buffer.length; index++) {
+        lines.push(buffer.getLine(index)?.translateToString(true) || "");
+      }
+      return lines.join("\n").replace(/\n+$/, "");
+    },
+    focusInput,
+    focusInputFromAndroid,
+    hasInputFocus() {
+      return terminal.element?.contains(document.activeElement) === true;
+    },
+    setInputEnabled(enabled) {
+      inputEnabled = enabled;
+      document.body.classList.toggle("input-disabled", !enabled);
+      terminal.options.disableStdin = !enabled;
+      fit();
+    },
+    setFontSize(value) {
+      const parsed = Number(value);
+      if (!Number.isFinite(parsed)) return;
+      preferredColumnsApplied = true;
+      terminal.options.fontSize = Math.max(9, Math.min(18, Math.round(parsed)));
+      fit();
+    }
+  };
+
+  requestAnimationFrame(() => {
+    fit();
+  });
+})();
+</script>
+</body>
+</html>

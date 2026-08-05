@@ -1,0 +1,5 @@
+tailscale.com v1.100.0
+released: 2026-06-03
+required-go: 1.26.4
+source: https://github.com/tailscale/tailscale/tree/v1.100.0
+license: BSD-3-Clause

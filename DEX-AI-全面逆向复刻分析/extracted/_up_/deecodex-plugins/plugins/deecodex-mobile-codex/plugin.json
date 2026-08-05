@@ -1,0 +1,64 @@
+{
+  "id": "deecodex-mobile-codex",
+  "name": "Mobile Codex",
+  "version": "0.1.20",
+  "description": "DEX AI 第一方 Mobile Codex 账号、设备和 P2P Companion 插件",
+  "author": "DEX AI",
+  "kind": "integration",
+  "tags": [
+    "mobile-codex",
+    "p2p",
+    "companion"
+  ],
+  "first_party": true,
+  "lifecycle": {
+    "autostart": "host_ready",
+    "requires_gateway": false,
+    "restart_policy": "on_failure",
+    "shutdown_timeout_ms": 10000
+  },
+  "entry": {
+    "runtime": "binary",
+    "script": "mobile-codex-dex-plugin-current"
+  },
+  "permissions": [
+    "network",
+    "secrets"
+  ],
+  "account": {
+    "enabled": true,
+    "label": "Mobile Codex 账号",
+    "methods": {
+      "register": "mobile_codex.auth.register",
+      "verify_email": "mobile_codex.auth.verify_email",
+      "login": "mobile_codex.auth.login",
+      "refresh": "mobile_codex.auth.refresh",
+      "logout": "mobile_codex.auth.logout",
+      "forgot_password": "mobile_codex.auth.forgot_password",
+      "reset_password": "mobile_codex.auth.reset_password",
+      "current_user": "mobile_codex.auth.current_user",
+      "list_devices": "mobile_codex.devices.list",
+      "rename_device": "mobile_codex.devices.rename",
+      "revoke_device": "mobile_codex.devices.revoke",
+      "status": "mobile_codex.service.status",
+      "start": "mobile_codex.service.start",
+      "stop": "mobile_codex.service.stop",
+      "restart": "mobile_codex.service.restart"
+    }
+  },
+  "features": [
+    {
+      "id": "service",
+      "kind": "service",
+      "label": "Mobile Codex Companion",
+      "description": "管理当前电脑的 Mobile Codex P2P 服务",
+      "methods": {
+        "status": "mobile_codex.service.status",
+        "start": "mobile_codex.service.start",
+        "stop": "mobile_codex.service.stop",
+        "restart": "mobile_codex.service.restart",
+        "prepare_windows_codex": "mobile_codex.service.prepare_windows_codex"
+      }
+    }
+  ]
+}
