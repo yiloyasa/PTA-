@@ -1,0 +1,9 @@
+﻿{
+  "name": "dex-gui",
+  "version": "1.0.0",
+  "description": "DEX AI 桌面端",
+  "main": "src/main.js",
+  "dependencies": {
+    "electron": "^28.0.0"
+  }
+}

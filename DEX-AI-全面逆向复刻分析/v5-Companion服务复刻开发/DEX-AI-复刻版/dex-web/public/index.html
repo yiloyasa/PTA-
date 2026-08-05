@@ -1,0 +1,348 @@
+﻿<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>DEX AI 复刻版</title><style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,'Segoe UI',sans-serif;background:#0f0f1a;color:#e0e0e0;height:100vh;display:flex}
+.s{width:200px;background:#1a1a2e;border-right:1px solid #2a2a4a;display:flex;flex-direction:column}
+.sh{padding:16px;border-bottom:1px solid #2a2a4a}.sh h1{color:#e94560;font-size:16px}
+.ni{padding:10px 16px;cursor:pointer;font-size:14px;border-left:3px solid transparent;transition:all .15s}
+.ni:hover{background:#2a2a4a}.ni.a{background:#2a2a4a;border-left-color:#e94560}
+.m{flex:1;display:flex;flex-direction:column}
+.t{padding:12px 20px;border-bottom:1px solid #2a2a4a;display:flex;align-items:center;justify-content:space-between}
+.btn{padding:6px 14px;border-radius:6px;border:none;cursor:pointer;font-size:13px;transition:all .15s;position:relative}
+.btn:active:not(:disabled){opacity:0.7;transform:scale(0.96)}
+.btn:disabled{opacity:0.5;cursor:not-allowed}
+.bp{background:#e94560;color:#fff}.bs{background:#2a2a4a;color:#e0e0e0}
+.c{display:none;padding:20px;overflow-y:auto;height:calc(100vh-49px)}.c.a{display:block}
+.cd{background:#1a1a2e;border-radius:8px;padding:16px;margin-bottom:12px;border:1px solid #2a2a4a}
+.cd h3{font-size:13px;margin-bottom:12px;color:#e94560}
+.cg{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.sc{padding:16px;border-radius:6px;background:#1e1e3a;text-align:center}
+.sc .v{font-size:24px;font-weight:bold;color:#e94560}.sc .l{font-size:11px;color:#888;margin-top:4px}
+.msg{margin-bottom:10px;display:flex}.msg.u{justify-content:flex-end}.msg.a{justify-content:flex-start}
+.mb{max-width:80%;padding:10px 14px;border-radius:10px;font-size:14px;line-height:1.5;white-space:pre-wrap}
+.msg.u .mb{background:#e94560;color:#fff}.msg.a .mb{background:#1e1e3a;border:1px solid #2a2a4a}
+.ci{display:flex;gap:8px;padding:10px 0;border-top:1px solid #2a2a4a}
+.ci textarea{flex:1;padding:10px;border-radius:6px;border:1px solid #2a2a4a;background:#1a1a2e;color:#e0e0e0;resize:none;min-height:44px;font-family:inherit}
+.fg{margin-bottom:12px}.fg label{display:block;font-size:12px;color:#888;margin-bottom:4px}
+.fg input,.fg select{width:100%;padding:8px;border-radius:6px;border:1px solid #2a2a4a;background:#1e1e3a;color:#e0e0e0;font-size:13px}
+.sd{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}.sd.g{background:#4ade80}.sd.r{background:#ef4444}.sd.y{background:#fbbf24}
+#st{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1a1a2e;border:1px solid #2a2a4a;padding:10px 20px;border-radius:8px;font-size:13px;z-index:999;display:none;max-width:80vw;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,.4)}
+#loading{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:1000;justify-content:center;align-items:center}
+#loading .box{background:#1a1a2e;padding:30px;border-radius:12px;border:1px solid #2a2a4a;text-align:center}
+.spinner{width:32px;height:32px;border:3px solid #2a2a4a;border-top-color:#e94560;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+#pc{display:none;text-align:center;padding:30px;margin-top:12px;background:#1e1e3a;border-radius:12px;border:2px dashed #e94560}
+#pcv{font-size:64px;font-weight:bold;color:#e94560;letter-spacing:15px;font-family:monospace;user-select:all}
+#pch{font-size:14px;color:#888;margin-bottom:8px}
+.to{background:#0a0a14;padding:12px;border-radius:6px;font-family:monospace;font-size:12px;min-height:200px;max-height:400px;overflow-y:auto;white-space:pre-wrap;line-height:1.4}
+</style></head><body><div class="s"><div class="sh"><h1>DEX AI</h1><p style="color:#666;font-size:11px">复刻版 v1.0</p></div>
+<div class="ni a" id="nd" onclick="st('d')">📊 仪表盘</div>
+<div class="ni" id="nc" onclick="st('c')">💬 AI 对话</div>
+<div class="ni" id="ndv" onclick="st('dv')">📫 设备</div>
+<div class="ni" id="nf" onclick="st('f')">📁 文件</div>
+<div class="ni" id="nt" onclick="st('t')">🔧 终端</div>
+<div class="ni" id="nr" onclick="st('r')">🔲 RPC</div>
+<div class="ni" id="ns" onclick="st('s')">⚙️ 设置</div>
+<div style="margin-top:auto;padding:12px;border-top:1px solid #2a2a4a;font-size:11px">
+<div><span class="sd y" id="sdc"></span>Companion <span id="stc">检查中...</span></div>
+<div><span class="sd y" id="sdp"></span>控制平面 <span id="stp">检查中...</span></div>
+</div></div>
+<div class="m"><div class="t"><h2 id="pt">仪表盘</h2><button class="btn bs" onclick="rf()">🔄 刷新</button></div>
+<div class="c a" id="td"><div class="cg">
+<div class="sc"><div class="v" id="s1">-</div><div class="l">线程</div></div>
+<div class="sc"><div class="v" id="s2">-</div><div class="l">设备</div></div>
+<div class="sc"><div class="v">126</div><div class="l">RPC方法</div></div>
+<div class="sc"><div class="v" id="s3">-</div><div class="l">运行时间</div></div>
+</div>
+<div class="cd"><h3>服务状态</h3><p id="ss">检测中...</p></div>
+<div class="cd"><h3>快速操作</h3><button class="btn bp" onclick="q('initialize')">初始化</button><button class="btn bs" onclick="q('model/list')" style="margin-left:8px">模型列表</button><button class="btn bs" onclick="q('environment/info')" style="margin-left:8px">环境信息</button></div></div>
+<div class="c" id="tc"><div style="display:flex;flex-direction:column;height:calc(100vh-110px)"><div id="chatM" style="flex:1;overflow-y:auto"></div><div id="cs" style="font-size:12px;color:#666;padding:4px 0">就绪</div><div class="ci"><textarea id="mi" placeholder="输入消息..." rows="2"></textarea><button class="btn bp" id="sb" onclick="sm()">发送</button></div></div></div>
+<div class="c" id="tdv"><div class="cd"><h3>设备配对</h3><p style="font-size:13px;color:#666;margin-bottom:12px">在手机端输入配对码连接桌面端</p><button class="btn bp" id="spBtn" onclick="sp()">生成配对码</button><div id="pc"><div style="font-size:12px;color:#888;margin-bottom:4px">扫描下方配对码</div><div id="pcv"></div><div style="font-size:12px;color:#666;margin-top:8px">有效期 <span id="pce">300</span> 秒</div><button class="btn bs" onclick="document.getElementById('pc').style.display='none'" style="margin-top:12px">关闭</button></div></div>
+<div class="cd"><h3>已配对设备</h3><p style="font-size:12px;color:#666" id="pdList">暂无</p></div></div>
+<div class="c" id="tf"><div class="cd"><h3>文件浏览</h3><div style="display:flex;gap:8px;margin-bottom:12px"><input type="text" id="fp" value="C:\" style="flex:1;padding:8px;border-radius:6px;border:1px solid #2a2a4a;background:#1e1e3a;color:#e0e0e0;font-size:13px"><button class="btn bp" onclick="bf()">浏览</button><button class="btn bs" onclick="gu()">上级</button></div><div id="fl"></div></div>
+<div class="cd" id="fec" style="display:none"><h3>文件编辑</h3><div id="fep" style="font-size:12px;color:#888;margin-bottom:8px"></div><textarea id="fe" rows="12" style="width:100%;padding:10px;border-radius:6px;border:1px solid #2a2a4a;background:#0a0a14;color:#e0e0e0;font-family:monospace;font-size:12px"></textarea><div style="margin-top:8px"><button class="btn bp" onclick="sf()">保存</button><button class="btn bs" onclick="cf()" style="margin-left:8px">取消</button></div></div></div>
+<div class="c" id="tt"><div class="cd"><h3>终端</h3><div style="display:flex;gap:8px;margin-bottom:12px"><input type="text" id="tcmd" placeholder="输入命令..." style="flex:1;padding:8px;border-radius:6px;border:1px solid #2a2a4a;background:#1e1e3a;color:#e0e0e0;font-size:13px"><button class="btn bp" onclick="ec()">执行</button><button class="btn bs" onclick="clr()">清除</button></div><pre class="to" id="to">等待命令...</pre></div></div>
+<div class="c" id="tr"><div class="cd"><h3>RPC 测试</h3><select id="rm" style="width:100%;margin-bottom:8px;padding:8px;border-radius:6px;border:1px solid #2a2a4a;background:#1e1e3a;color:#e0e0e0;font-size:12px;font-family:monospace"></select><textarea id="rp" rows="3" style="width:100%;padding:10px;border-radius:6px;border:1px solid #2a2a4a;background:#1e1e3a;color:#e0e0e0;font-family:monospace;font-size:12px" placeholder="{}"></textarea><div style="margin-top:8px"><button class="btn bp" onclick="dr()">发送</button></div><pre class="to" id="rr" style="margin-top:8px;max-height:300px">等待请求...</pre></div></div>
+<div class="c" id="ts"><div class="cd"><h3>LLM 配置</h3><div class="fg"><label>API Key</label><input type="password" id="lk" placeholder="sk-..."></div><div class="fg"><label>API 地址</label><input type="text" id="lu" value="https://api.openai.com/v1"></div><div class="fg"><label>模型</label><input type="text" id="lm" value="gpt-3.5-turbo"></div><button class="btn bp" onclick="sv()">保存</button><button class="btn bs" onclick="tl()" style="margin-left:8px">测试连接</button><div id="lr" style="margin-top:8px;font-size:12px"></div></div>
+<div class="cd"><h3>控制平面</h3><div class="fg"><label>邮箱</label><input type="email" id="le" value="boss@test.com"></div><div class="fg"><label>密码</label><input type="password" id="lp" value="admin123"></div><button class="btn bp" onclick="rg()">注册</button><button class="btn bs" onclick="li()" style="margin-left:8px">登录</button><div id="ar" style="margin-top:8px;font-size:12px"></div></div></div></div>
+<div id="st"></div>
+<div id="loading"><div class="box"><div class="spinner"></div><div id="lt">加载中...</div></div></div>
+<script>
+// ===== 工具函数 =====
+function ts(m,c){var t=document.getElementById("st");t.textContent=m;t.style.display="block";t.style.color=c||"#e0e0e0";clearTimeout(t._t);t._t=setTimeout(function(){t.style.display="none"},3000)}
+function showLoading(text){document.getElementById("lt").textContent=text||"加载中...";document.getElementById("loading").style.display="flex"}
+function hideLoading(){document.getElementById("loading").style.display="none"}
+
+function btnLoading(btnId, loading){
+    var btn = document.getElementById(btnId);
+    if(!btn) return;
+    btn.disabled = loading;
+    btn.textContent = loading ? "处理中..." : btn.getAttribute("data-orig") || btn.textContent;
+    if(!btn.getAttribute("data-orig")) btn.setAttribute("data-orig", btn.textContent);
+}
+
+function cr(m,p){return fetch("/api/companion",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({jsonrpc:"2.0",id:Date.now(),method:m,params:p||{}})}).then(function(r){return r.json()}).then(function(d){if(d.error)throw new Error(d.error.message);return d.result})}
+
+// ===== 标签切换 =====
+var tabs={d:"仪表盘",c:"AI对话",dv:"设备",f:"文件",t:"终端",r:"RPC",s:"设置"};
+var map={d:"td",c:"tc",dv:"tdv",f:"tf",t:"tt",r:"tr",s:"ts"};
+var nm={d:"nd",c:"nc",dv:"ndv",f:"nf",t:"nt",r:"nr",s:"ns"};
+
+function st(n){
+    document.querySelectorAll(".c").forEach(function(e){e.classList.remove("a")});
+    document.querySelectorAll(".ni").forEach(function(e){e.classList.remove("a")});
+    document.getElementById(map[n]).classList.add("a");
+    document.getElementById(nm[n]).classList.add("a");
+    document.getElementById("pt").textContent=tabs[n]||n;
+    if(n==="d")rd();if(n==="dv")rdev();
+}
+
+// ===== 仪表盘 =====
+function rd(){
+    document.getElementById("ss").textContent="检测中...";
+    cr("initialize",{}).then(function(r){
+        document.getElementById("ss").textContent="Companion v"+r.version+" | 能力: "+(r.capabilities||[]).join(", ");
+        document.getElementById("s1").textContent=r.capabilities?r.capabilities.length:"-";
+        ts("仪表盘已刷新","#4ade80");
+    }).catch(function(e){
+        document.getElementById("ss").textContent="离线: "+e.message;
+        ts("Companion离线","#ef4444");
+    });
+}
+
+function q(m){
+    document.getElementById("ss").textContent="调用中...";
+    cr(m,{}).then(function(r){
+        document.getElementById("ss").textContent=m+" 成功";
+        ts(m+" 成功","#4ade80");
+    }).catch(function(e){
+        document.getElementById("ss").textContent=m+" 失败: "+e.message;
+        ts(m+" 失败: "+e.message,"#ef4444");
+    });
+}
+
+function rf(){rd();ts("已刷新","#4ade80")}
+
+// ===== 状态检查 =====
+function cs(){
+    cr("initialize",{}).then(function(){
+        document.getElementById("sdc").className="sd g";
+        document.getElementById("stc").textContent="在线";
+    }).catch(function(){
+        document.getElementById("sdc").className="sd r";
+        document.getElementById("stc").textContent="离线";
+    });
+    fetch("/api/control/health").then(function(r){return r.json()}).then(function(){
+        document.getElementById("sdp").className="sd g";
+        document.getElementById("stp").textContent="在线";
+    }).catch(function(){
+        document.getElementById("sdp").className="sd r";
+        document.getElementById("stp").textContent="离线";
+    });
+}
+
+// ===== AI 对话 =====
+function sm(){
+    var i=document.getElementById("mi"),t=i.value.trim();
+    if(!t){ts("请输入消息","#fbbf24");return}
+    i.value="";
+    var c=document.getElementById("chatM");
+    var d=document.createElement("div");d.className="msg u";
+    d.innerHTML="<div class='mb'>"+t.replace(/</g,"&lt;")+"</div>";
+    c.appendChild(d);c.scrollTop=c.scrollHeight;
+    document.getElementById("cs").textContent="AI思考中...";
+    btnLoading("sb",true);
+    var key=document.getElementById("lk").value||localStorage.getItem("dex_llm_key")||"";
+    if(key){
+        fetch("/api/control/v1/llm/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
+            model:document.getElementById("lm").value||"gpt-3.5-turbo",
+            messages:[{role:"user",content:t}],
+            apiKey:key,
+            baseUrl:document.getElementById("lu").value||"https://api.openai.com/v1"
+        })}).then(function(r){return r.json().catch(function(){return{error:"响应解析失败"}})}).then(function(d){
+            var r2=(d.choices&&d.choices[0]&&d.choices[0].message)?d.choices[0].message.content:(d.error||"(无响应)");
+            var dd=document.createElement("div");dd.className="msg a";
+            dd.innerHTML="<div class='mb'>"+r2.replace(/</g,"&lt;").replace(/\n/g,"<br>")+"</div>";
+            c.appendChild(dd);c.scrollTop=c.scrollHeight;
+            document.getElementById("cs").textContent="就绪";
+            if(d.error)ts("LLM错误: "+d.error,"#ef4444");else ts("AI回复成功","#4ade80");
+        }).catch(function(e){
+            var dd=document.createElement("div");dd.className="msg a";
+            dd.innerHTML="<div class='mb'>⚠️ 调用失败: "+e.message+"</div>";
+            c.appendChild(dd);c.scrollTop=c.scrollHeight;
+            document.getElementById("cs").textContent="错误";
+            ts("LLM失败: "+e.message,"#ef4444");
+        }).finally(function(){btnLoading("sb",false)});
+    }else{
+        setTimeout(function(){
+            var dd=document.createElement("div");dd.className="msg a";
+            dd.innerHTML="<div class='mb'>⚠️ 未配置LLM API<br>请在设置中填入 API Key</div>";
+            c.appendChild(dd);c.scrollTop=c.scrollHeight;
+            document.getElementById("cs").textContent="离线模式";
+            btnLoading("sb",false);
+            ts("离线模式","#fbbf24");
+        },300);
+    }
+}
+
+// ===== 设备配对 =====
+function sp(){
+    btnLoading("spBtn",true);
+    ts("生成中...","#fbbf24");
+    cr("remoteControl/pairing/start",{}).then(function(r){
+        document.getElementById("pcv").textContent=r.pairingCode;
+        document.getElementById("pce").textContent=r.expiresIn||300;
+        document.getElementById("pc").style.display="block";
+        ts("配对码: "+r.pairingCode,"#4ade80");
+    }).catch(function(e){
+        ts("失败: "+e.message,"#ef4444");
+    }).finally(function(){btnLoading("spBtn",false)});
+}
+
+function rdev(){
+    cr("remoteControl/status/read",{}).then(function(r){
+        document.getElementById("s2").textContent=r.pairedDevices||0;
+        if(r.pairedDevices>0)document.getElementById("pdList").textContent=r.pairedDevices+" 台设备已配对";
+    }).catch(function(){});
+}
+
+// ===== 文件浏览 =====
+var cd="C:\\";
+function bf(){
+    var p=document.getElementById("fp").value.trim()||"C:\\";cd=p;
+    document.getElementById("fl").innerHTML="<div style='color:#888;padding:8px'>加载中...</div>";
+    cr("fs/readDirectory",{path:p}).then(function(r){
+        var h="<table style='width:100%;font-size:13px;border-collapse:collapse'>";
+        r.entries.forEach(function(e){
+            var ic=(e.type==="directory")?"📁":"📋";
+            h+="<tr style='cursor:pointer;border-top:1px solid #2a2a4a'><td style='padding:6px 8px'>"+ic+" "+e.name+"</td><td style='text-align:right;padding:6px 8px;color:#666'>"+e.type+"</td></tr>";
+        });
+        h+="</table>";document.getElementById("fl").innerHTML=h;
+        ts("已加载 "+r.entries.length+" 项","#4ade80");
+    }).catch(function(e){
+        document.getElementById("fl").innerHTML="<div style='color:#ef4444;padding:8px'>❌ "+e.message+"</div>";
+        ts("加载失败: "+e.message,"#ef4444");
+    });
+}
+
+function op(p){document.getElementById("fp").value=p;bf()}
+function gu(){
+    var p=document.getElementById("fp").value;var parts=p.replace(/\\+$/,"").split("\\");parts.pop();
+    if(parts.length===0)parts=["C:"];document.getElementById("fp").value=parts.join("\\");bf();
+}
+function of(p){
+    document.getElementById("fec").style.display="block";
+    document.getElementById("fep").textContent="加载: "+p;
+    document.getElementById("fe").value="加载中...";
+    cr("fs/readFile",{path:p}).then(function(r){
+        document.getElementById("fe").value=r.content;
+        document.getElementById("fep").textContent="📋 "+p;
+        ts("文件已加载","#4ade80");
+    }).catch(function(e){
+        document.getElementById("fe").value="读取失败: "+e.message;
+        ts("读取失败: "+e.message,"#ef4444");
+    });
+}
+function sf(){
+    var p=document.getElementById("fep").textContent.replace(/^📋 /,"");
+    var c=document.getElementById("fe").value;
+    cr("fs/writeFile",{path:p,content:c}).then(function(){ts("已保存","#4ade80")}).catch(function(e){ts("保存失败: "+e.message,"#ef4444")});
+}
+function cf(){document.getElementById("fec").style.display="none"}
+function clr(){document.getElementById("to").textContent="等待命令..."}
+function ec(){
+    var cmd=document.getElementById("tcmd").value.trim();
+    if(!cmd){ts("请输入命令","#fbbf24");return}
+    var o=document.getElementById("to");
+    if(o.textContent==="等待命令...")o.textContent="";
+    o.textContent+="\n$ "+cmd+"\n";o.scrollTop=o.scrollHeight;
+    cr("command/exec",{command:cmd}).then(function(r){
+        o.textContent+="PID: "+r.processId+"\n";o.scrollTop=o.scrollHeight;
+        ts("命令已执行","#4ade80");
+    }).catch(function(e){
+        o.textContent+="❌ "+e.message+"\n";o.scrollTop=o.scrollHeight;
+        ts("执行失败: "+e.message,"#ef4444");
+    });
+}
+function dr(){
+    var m=document.getElementById("rm").value;var p={};
+    try{p=JSON.parse(document.getElementById("rp").value||"{}")}catch(e){}
+    document.getElementById("rr").textContent="发送中...";
+    cr(m,p).then(function(r){
+        document.getElementById("rr").textContent=JSON.stringify(r,null,2);
+        ts(m+" 成功","#4ade80");
+    }).catch(function(e){
+        document.getElementById("rr").textContent="❌ "+e.message;
+        ts(m+" 失败: "+e.message,"#ef4444");
+    });
+}
+function sv(){
+    var key=document.getElementById("lk").value;
+    localStorage.setItem("dex_llm_key",key);
+    document.getElementById("lr").innerHTML="<span style='color:#4ade80'>✅ 已保存</span>";
+    ts("配置已保存","#4ade80");
+}
+function tl(){
+    var key=document.getElementById("lk").value;
+    if(!key){document.getElementById("lr").innerHTML="<span style='color:#ef4444'>⚠️ 请输入API Key</span>";return}
+    document.getElementById("lr").innerHTML="<span style='color:#fbbf24'>⏳ 测试中...</span>";
+    fetch("/api/control/v1/llm/test",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({apiKey:key,baseUrl:document.getElementById("lu").value})})
+    .then(function(r){return r.json()}).then(function(d){
+        document.getElementById("lr").innerHTML=d.ok?"<span style='color:#4ade80'>✅ 连接成功</span>":"<span style='color:#ef4444'>⚠️ "+(d.error||"失败")+"</span>";
+        if(d.ok)ts("连接成功","#4ade80");else ts("连接失败: "+d.error,"#ef4444");
+    }).catch(function(e){
+        document.getElementById("lr").innerHTML="<span style='color:#ef4444'>⚠️ "+e.message+"</span>";
+        ts("测试失败: "+e.message,"#ef4444");
+    });
+}
+function rg(){
+    var e=document.getElementById("le").value||"boss@test.com";
+    var pw=document.getElementById("lp").value||"admin123";
+    fetch("/api/control/v1/auth/register",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email:e,password:pw})})
+    .then(function(r){return r.json()}).then(function(d){
+        if(d.user){
+            document.getElementById("ar").innerHTML="<span style='color:#4ade80'>✅ 注册成功: "+d.user.email+"</span>";
+            ts("注册成功","#4ade80");
+        }else{
+            document.getElementById("ar").innerHTML="<span style='color:#ef4444'>⚠️ "+(d.error||"失败")+"</span>";
+            ts("注册失败: "+(d.error||"未知错误"),"#ef4444");
+        }
+    }).catch(function(e){
+        document.getElementById("ar").innerHTML="<span style='color:#ef4444'>⚠️ "+e.message+"</span>";
+        ts("注册失败: "+e.message,"#ef4444");
+    });
+}
+function li(){
+    var e=document.getElementById("le").value||"boss@test.com";
+    var pw=document.getElementById("lp").value||"admin123";
+    fetch("/api/control/v1/auth/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email:e,password:pw})})
+    .then(function(r){return r.json()}).then(function(d){
+        if(d.user){
+            document.getElementById("ar").innerHTML="<span style='color:#4ade80'>✅ 登录成功: "+d.user.email+"</span>";
+            ts("登录成功","#4ade80");
+        }else{
+            document.getElementById("ar").innerHTML="<span style='color:#ef4444'>⚠️ "+(d.error||"失败")+"</span>";
+            ts("登录失败: "+(d.error||"未知错误"),"#ef4444");
+        }
+    }).catch(function(e){
+        document.getElementById("ar").innerHTML="<span style='color:#ef4444'>⚠️ "+e.message+"</span>";
+        ts("登录失败: "+e.message,"#ef4444");
+    });
+}
+
+// ===== 初始化 =====
+document.addEventListener("DOMContentLoaded",function(){
+    var ms=["initialize","account/read","thread/list","thread/start","thread/read","thread/archive","thread/delete","model/list","config/read","config/value/write","fs/readFile","fs/writeFile","fs/readDirectory","fs/createDirectory","fs/remove","command/exec","command/exec/write","command/exec/terminate","process/spawn","process/kill","remoteControl/enable","remoteControl/disable","remoteControl/status/read","remoteControl/pairing/start","remoteControl/client/list","environment/info","plugin/list","plugin/install","plugin/uninstall","feedback/upload","fuzzyFileSearch","review/start","memory/reset","turn/start","skills/list","mcpServer/tool/call","experimentalFeature/list","permissionProfile/list","collaborationMode/list"];
+    var s=document.getElementById("rm");
+    for(var i=0;i<ms.length;i++){var o=document.createElement("option");o.value=ms[i];o.textContent=ms[i];s.appendChild(o)}
+    var key=localStorage.getItem("dex_llm_key");if(key)document.getElementById("lk").value=key;
+    rd();cs();setInterval(cs,10000);
+    document.getElementById("mi").addEventListener("keydown",function(e){if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sm()}});
+    document.getElementById("fl").addEventListener("click",function(e){
+        var tr=e.target.closest("tr");if(!tr)return;
+        var td=tr.querySelector("td");if(!td)return;
+        var txt=td.textContent;var name=txt.substring(2).trim();
+        if(txt.startsWith("📁")){op(cd+"\\"+name)}else{of(cd+"\\"+name)}
+    });
+    ts("DEX AI 已加载","#4ade80");
+});
+</script></body></html>

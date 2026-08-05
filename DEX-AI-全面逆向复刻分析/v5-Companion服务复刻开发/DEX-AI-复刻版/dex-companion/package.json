@@ -1,0 +1,14 @@
+{
+  "name": "dex-companion",
+  "version": "1.0.0",
+  "description": "Mobile Codex Companion - 手机端连接服务",
+  "main": "src/index.js",
+  "dependencies": {
+    "express": "^4.18.0",
+    "jsonwebtoken": "^9.0.0",
+    "multicast-dns": "^7.2.0",
+    "node-forge": "^1.4.0",
+    "uuid": "^9.0.0",
+    "ws": "^8.16.0"
+  }
+}

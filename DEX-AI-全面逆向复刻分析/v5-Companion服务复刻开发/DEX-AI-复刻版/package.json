@@ -1,0 +1,12 @@
+﻿{
+  "name": "dex-ai-replica",
+  "version": "1.0.0",
+  "description": "DEX AI 复刻版 - 桌面AI助手",
+  "private": true,
+  "workspaces": [
+    "dex-core",
+    "dex-gui",
+    "dex-companion",
+    "dex-control"
+  ]
+}

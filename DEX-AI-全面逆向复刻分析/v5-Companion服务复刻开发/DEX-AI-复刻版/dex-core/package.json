@@ -1,0 +1,9 @@
+﻿{
+  "name": "dex-core",
+  "version": "1.0.0",
+  "description": "DEX AI 核心引擎 - 插件管理 + JSON-RPC",
+  "main": "src/index.js",
+  "dependencies": {
+    "uuid": "^9.0.0"
+  }
+}
