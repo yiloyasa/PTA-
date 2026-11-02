@@ -1,4 +1,4 @@
-﻿"""Manual paste translation window."""
+"""Manual paste translation window."""
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QKeySequence, QTextCursor
 from PyQt5.QtWidgets import (
@@ -94,17 +94,9 @@ class ManualTranslateWindow(QWidget):
         self.result_edit = QTextEdit()
         self.result_edit.setReadOnly(True)
         self.result_edit.setPlaceholderText("译文会显示在这里")
-        self.result_edit.setStyleSheet(
-            """
-            QTextEdit {
-                background: #FFFFFF;
-                border: 1px solid #DDE2EA;
-                border-radius: 12px;
-                padding: 13px;
-                font-size: 19px;
-            }
-            """
-        )
+        result_font = self.result_edit.font()
+        result_font.setPointSize(14)
+        self.result_edit.setFont(result_font)
         layout.addWidget(self.result_edit, 1)
 
         QShortcut(QKeySequence("Ctrl+Return"), self).activated.connect(
@@ -125,19 +117,20 @@ class ManualTranslateWindow(QWidget):
         self.translate_requested.emit(text)
 
     def show_loading(self):
-        self.translate_button.setEnabled(False)
-        self.translate_button.setText("翻译中…")
+        self._set_busy(True)
         self.result_edit.setPlainText("翻译中…")
 
     def show_result(self, result):
-        self.translate_button.setEnabled(True)
-        self.translate_button.setText("翻译")
+        self._set_busy(False)
         self.result_edit.setPlainText(result)
 
     def show_error(self, message):
-        self.translate_button.setEnabled(True)
-        self.translate_button.setText("翻译")
+        self._set_busy(False)
         self.result_edit.setPlainText("错误：" + message)
+
+    def _set_busy(self, busy):
+        self.translate_button.setEnabled(not busy)
+        self.translate_button.setText("翻译中…" if busy else "翻译")
 
     def show_and_focus(self):
         self.show()

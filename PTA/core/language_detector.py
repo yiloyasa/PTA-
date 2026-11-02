@@ -7,12 +7,8 @@ def detect_language(text):
 
     if chinese_count == 0 and english_count == 0:
         return "unknown"
-    if chinese_count == 0:
-        return "en"
-    if english_count == 0:
-        return "zh"
-
-    return "zh" if chinese_count > english_count else "en"
+    # 只有纯中文才译成英文；含英文字符（纯英文或中英混排）一律译成中文。
+    return "en" if english_count else "zh"
 
 
 def get_source_target(source_language):

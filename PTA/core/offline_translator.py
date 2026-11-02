@@ -1,6 +1,7 @@
-﻿"""Offline NLLB-200 Distilled 600M translator."""
+"""Offline NLLB-200 Distilled 600M translator."""
 import os
 import sysconfig
+import threading
 
 MODEL_DIR = os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "离线翻译引擎"
@@ -20,6 +21,7 @@ class OfflineTranslator:
     def __init__(self, model_path=None, device="cpu"):
         self.model_path = model_path or MODEL_DIR
         self.device = device
+        self._load_lock = threading.Lock()
         self._loaded = False
         self.tokenizer = None
         self.model = None
@@ -36,6 +38,12 @@ class OfflineTranslator:
     def ensure_loaded(self):
         if self._loaded:
             return
+        with self._load_lock:
+            if self._loaded:
+                return
+            self._load_model()
+
+    def _load_model(self):
         if not self.is_model_available():
             raise RuntimeError(f"离线模型未安装：{self.model_path}")
 

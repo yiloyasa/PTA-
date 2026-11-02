@@ -1,10 +1,7 @@
-﻿"""Windows hotkey integration test for PTA."""
+"""Windows hotkey integration test for PTA."""
 import ctypes
-import os
-import sys
 
-PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path[:0] = [os.path.join(PROJECT_ROOT, "libs"), PROJECT_ROOT]
+from _bootstrap import PROJECT_ROOT  # noqa: F401
 
 from PyQt5.QtCore import QTimer
 from PyQt5.QtWidgets import QApplication

@@ -1,11 +1,9 @@
-﻿"""End-to-end PTA hotkey translation test."""
+"""End-to-end PTA hotkey translation test."""
 import ctypes
 import os
-import sys
 import time
 
-PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path[:0] = [os.path.join(PROJECT_ROOT, "libs"), PROJECT_ROOT]
+from _bootstrap import PROJECT_ROOT
 
 from PyQt5.QtCore import QTimer
 from PyQt5.QtWidgets import QApplication, QTextEdit

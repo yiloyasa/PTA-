@@ -1,4 +1,4 @@
-﻿"""Windows global hotkey and keyboard helpers for PTA."""
+"""Windows global hotkey and keyboard helpers for PTA."""
 import ctypes
 import logging
 from ctypes import wintypes
@@ -22,6 +22,7 @@ VK_LWIN = 0x5B
 VK_RWIN = 0x5C
 VK_C = 0x43
 VK_F9 = 0x78
+VK_INSERT = 0x2D
 KEYEVENTF_KEYUP = 0x0002
 
 
@@ -102,13 +103,27 @@ def restore_foreground_window(hwnd):
         ctypes.windll.user32.SetForegroundWindow(hwnd)
 
 
-def send_ctrl_c():
-    """Release hotkey modifiers, then synthesize Ctrl+C."""
+def _release_modifier_keys():
     user32 = ctypes.windll.user32
     for key in (VK_SHIFT, VK_CONTROL, VK_MENU, VK_LWIN, VK_RWIN):
         user32.keybd_event(key, 0, KEYEVENTF_KEYUP, 0)
 
-    user32.keybd_event(VK_CONTROL, 0, 0, 0)
-    user32.keybd_event(VK_C, 0, 0, 0)
-    user32.keybd_event(VK_C, 0, KEYEVENTF_KEYUP, 0)
-    user32.keybd_event(VK_CONTROL, 0, KEYEVENTF_KEYUP, 0)
+
+def _press_combo(*virtual_keys):
+    user32 = ctypes.windll.user32
+    for key in virtual_keys:
+        user32.keybd_event(key, 0, 0, 0)
+    for key in reversed(virtual_keys):
+        user32.keybd_event(key, 0, KEYEVENTF_KEYUP, 0)
+
+
+def send_ctrl_c():
+    """Release hotkey modifiers, then synthesize Ctrl+C."""
+    _release_modifier_keys()
+    _press_combo(VK_CONTROL, VK_C)
+
+
+def send_ctrl_insert():
+    """Ctrl+Insert copy fallback — works in terminals and some other apps."""
+    _release_modifier_keys()
+    _press_combo(VK_CONTROL, VK_INSERT)

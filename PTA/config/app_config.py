@@ -1,14 +1,16 @@
-﻿"""PTA configuration and Windows auto-start management."""
+"""PTA configuration and Windows auto-start management."""
 import json
 import os
 import sys
 import winreg
 
+from core.offline_translator import OfflineTranslator
+from core.windows_hotkey import DEFAULT_HOTKEY
+
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CONFIG_FILE = os.path.join(PROJECT_ROOT, "config", "config.json")
 AUTOSTART_KEY = r"Software\Microsoft\Windows\CurrentVersion\Run"
 AUTOSTART_NAME = "PTA"
-DEFAULT_HOTKEY_LABEL = "Ctrl + Alt + Shift + F9"
 
 
 class AppConfig:
@@ -32,6 +34,9 @@ class AppConfig:
         with open(CONFIG_FILE, "w", encoding="utf-8") as file:
             json.dump(self._data, file, ensure_ascii=False, indent=2)
 
+    def get_config_path(self):
+        return CONFIG_FILE
+
     def get_baidu_app_id(self):
         return self._data.get("baidu_app_id", "").strip()
 
@@ -44,23 +49,13 @@ class AppConfig:
         self.save()
 
     def get_hotkey(self):
-        return DEFAULT_HOTKEY_LABEL
+        return DEFAULT_HOTKEY.label
 
     def get_offline_model_path(self):
-        return os.path.join(PROJECT_ROOT, "\u79bb\u7ebf\u7ffb\u8bd1\u5f15\u64ce")
+        return os.path.join(PROJECT_ROOT, "离线翻译引擎")
 
     def has_offline_model(self):
-        model_path = self.get_offline_model_path()
-        model_files = (
-            "model.safetensors",
-            "model.safetensors.index.json",
-            "pytorch_model.bin",
-            "pytorch_model.bin.index.json",
-        )
-        return (
-            os.path.isfile(os.path.join(model_path, "config.json"))
-            and any(os.path.isfile(os.path.join(model_path, name)) for name in model_files)
-        )
+        return OfflineTranslator(self.get_offline_model_path()).is_model_available()
 
     @staticmethod
     def _launch_command():

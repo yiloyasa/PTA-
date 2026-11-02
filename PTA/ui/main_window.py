@@ -1,4 +1,4 @@
-﻿"""PTA application controller: tray, hotkey, clipboard capture, and translation."""
+"""PTA application controller: tray, hotkey, clipboard capture, and translation."""
 import logging
 import time
 
@@ -14,6 +14,7 @@ from core.windows_hotkey import (
     get_foreground_window,
     restore_foreground_window,
     send_ctrl_c,
+    send_ctrl_insert,
 )
 from ui.config_dialog import show_config_dialog
 from ui.floating_window import FloatingWindow
@@ -42,7 +43,9 @@ class TranslationThread(QThread):
 
 
 class MainController(QObject):
-    CAPTURE_TIMEOUT_SECONDS = 1.0
+    CAPTURE_TIMEOUT_SECONDS = 1.5
+    COPY_RETRY_INSERT_AT = 0.35  # seconds: try Ctrl+Insert (terminals, etc.)
+    COPY_RETRY_CTRL_C_AT = 0.75  # seconds: retry Ctrl+C (missed first input)
 
     def __init__(self, config, icon_path):
         super().__init__()
@@ -59,7 +62,9 @@ class MainController(QObject):
         self._latest_request = {"float": 0, "manual": 0}
         self._last_translation = ""
         self._capture_active = False
+        self._capture_started = 0.0
         self._capture_deadline = 0.0
+        self._copy_stage = 0
         self._saved_clipboard = None
         self._selection_window = 0
 
@@ -159,8 +164,12 @@ class MainController(QObject):
             self._saved_clipboard = self._clone_mime_data(clipboard.mimeData())
             clipboard.clear()
             restore_foreground_window(self._selection_window)
+            self._capture_started = time.monotonic()
+            self._capture_deadline = (
+                self._capture_started + self.CAPTURE_TIMEOUT_SECONDS
+            )
+            self._copy_stage = 0
             send_ctrl_c()
-            self._capture_deadline = time.monotonic() + self.CAPTURE_TIMEOUT_SECONDS
             QTimer.singleShot(60, self._poll_clipboard)
         except Exception as error:
             logging.exception("读取选中文本失败")
@@ -175,6 +184,17 @@ class MainController(QObject):
             self._capture_active = False
             self._translate_selected_text(text)
             return
+
+        elapsed = time.monotonic() - self._capture_started
+
+        # Some apps miss the first synthetic copy or need another key:
+        # retry with Ctrl+Insert, then Ctrl+C again, until the deadline.
+        if self._copy_stage < 1 and elapsed >= self.COPY_RETRY_INSERT_AT:
+            self._copy_stage = 1
+            send_ctrl_insert()
+        elif self._copy_stage < 2 and elapsed >= self.COPY_RETRY_CTRL_C_AT:
+            self._copy_stage = 2
+            send_ctrl_c()
 
         if time.monotonic() < self._capture_deadline:
             QTimer.singleShot(60, self._poll_clipboard)
@@ -291,6 +311,3 @@ class MainController(QObject):
         self.hotkey.unregister()
         self.tray.hide()
         QApplication.quit()
-
-
-MainWindow = MainController

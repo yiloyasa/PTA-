@@ -1,14 +1,37 @@
-﻿"""Floating window — shows above cursor, scrollable for long text."""
+"""Floating window — shows above cursor, scrollable and copyable."""
 from PyQt5.QtCore import Qt, QTimer
-from PyQt5.QtGui import QColor, QFont, QFontMetrics
+from PyQt5.QtGui import QColor, QFont, QFontMetrics, QKeySequence
 from PyQt5.QtWidgets import (
+    QApplication,
     QFrame,
     QGraphicsDropShadowEffect,
-    QLabel,
+    QMenu,
+    QShortcut,
     QScrollArea,
+    QTextEdit,
     QVBoxLayout,
     QWidget,
 )
+
+
+class CopyableTextEdit(QTextEdit):
+    """Read-only result view: text selectable, with a copy-all context menu."""
+
+    def __init__(self, owner):
+        super().__init__()
+        self._owner = owner
+        self.setReadOnly(True)
+        self.setFrameShape(QFrame.NoFrame)
+        self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        self.setCursor(Qt.IBeamCursor)
+
+    def contextMenuEvent(self, event):
+        menu = self.createStandardContextMenu()
+        copy_all = menu.addAction("复制全文")
+        copy_all.triggered.connect(self._owner.copy_full_text)
+        menu.exec_(event.globalPos())
 
 
 class FloatingWindow(QWidget):
@@ -24,7 +47,6 @@ class FloatingWindow(QWidget):
             Qt.Tool | Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint
         )
         self.setAttribute(Qt.WA_TranslucentBackground, True)
-        self.setAttribute(Qt.WA_ShowWithoutActivating, True)
         self._drag_offset = None
 
         outer = QVBoxLayout(self)
@@ -87,17 +109,21 @@ class FloatingWindow(QWidget):
         scroll_layout = QVBoxLayout(self._scroll_content)
         scroll_layout.setContentsMargins(14, 10, 14, 10)
 
-        self.result_label = QLabel()
-        self.result_label.setWordWrap(True)
-        self.result_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
-        self.result_label.setAttribute(Qt.WA_TransparentForMouseEvents, True)
-        self.result_label.setStyleSheet("background: transparent; border: none;")
+        self.result_view = CopyableTextEdit(self)
+        self.result_view.setAttribute(Qt.WA_TranslucentBackground, True)
+        self.result_view.viewport().setAutoFillBackground(False)
+        self.result_view.setStyleSheet("background: transparent; border: none;")
         font = QFont("Microsoft YaHei UI", 9)
         font.setWeight(QFont.Medium)
-        self.result_label.setFont(font)
-        scroll_layout.addWidget(self.result_label)
+        self.result_view.setFont(font)
+        scroll_layout.addWidget(self.result_view)
 
         self.scroll.setWidget(self._scroll_content)
+
+        # Ctrl+C copies the full text when no part is selected.
+        shortcut = QShortcut(QKeySequence.Copy, self)
+        shortcut.setContext(Qt.WindowShortcut)
+        shortcut.activated.connect(self.copy_full_text)
 
         self._auto_hide = QTimer(self)
         self._auto_hide.setSingleShot(True)
@@ -105,9 +131,9 @@ class FloatingWindow(QWidget):
 
     def _apply_text_style(self, error):
         color = "#B42318" if error else "#172033"
-        self.result_label.setStyleSheet(
+        self.result_view.setStyleSheet(
             f"""
-            QLabel {{
+            QTextEdit {{
                 color: {color};
                 font-family: "Microsoft YaHei UI";
                 font-size: 14px;
@@ -115,23 +141,30 @@ class FloatingWindow(QWidget):
                 background: transparent;
                 border: none;
                 padding: 0px;
+                selection-background-color: rgba(59, 130, 246, 90);
             }}
             """
         )
 
     def show_text(self, text, auto_hide_ms=10000, error=False):
         self._apply_text_style(error)
-        self.result_label.setText(text)
+        self.result_view.setPlainText(text)
         self.setWindowOpacity(self.FULL_OPACITY)
 
         # Calculate card width from text
-        metrics = QFontMetrics(self.result_label.font())
+        metrics = QFontMetrics(self.result_view.font())
         longest_line = max(text.splitlines() or [""])
         text_w = metrics.horizontalAdvance(longest_line) + 32
         card_width = max(self.MIN_WIDTH, min(self.MAX_WIDTH, text_w))
         self.card.setFixedWidth(card_width)
 
-        # Let the scroll area handle height — cap visible area
+        # Size the text view to its wrapped content; outer scroll takes over
+        # when the text is taller than MAX_VISIBLE_HEIGHT.
+        inner_width = card_width - 28  # 14px margins on each side
+        document = self.result_view.document()
+        document.setTextWidth(inner_width)
+        content_height = int(document.size().height()) + 4
+        self.result_view.setFixedHeight(max(content_height, 22))
         self.scroll.setMaximumHeight(self.MAX_VISIBLE_HEIGHT)
 
         self.card.adjustSize()
@@ -141,6 +174,16 @@ class FloatingWindow(QWidget):
         self._auto_hide.stop()
         if auto_hide_ms:
             self._auto_hide.start(auto_hide_ms)
+
+    def copy_full_text(self):
+        cursor = self.result_view.textCursor()
+        text = (
+            cursor.selectedText()
+            if cursor.hasSelection()
+            else self.result_view.toPlainText()
+        )
+        if text:
+            QApplication.clipboard().setText(text)
 
     def enterEvent(self, event):
         self._auto_hide.stop()

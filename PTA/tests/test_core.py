@@ -1,9 +1,7 @@
-﻿"""Core tests for PTA."""
+"""Core tests for PTA."""
 import os
-import sys
 
-PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path[:0] = [os.path.join(PROJECT_ROOT, "libs"), PROJECT_ROOT]
+from _bootstrap import PROJECT_ROOT  # noqa: F401
 
 from core.language_detector import detect_language, get_source_target
 from core.rate_limiter import TranslationRateLimiter
@@ -13,7 +11,9 @@ from config.app_config import AppConfig
 def test_language_detection():
     assert detect_language("Hello world") == "en"
     assert detect_language("她说话的小毛病") == "zh"
+    # 含英文字符（纯英文或中英混排）一律按英文处理，译成中文
     assert detect_language("Hello 你好") == "en"
+    assert detect_language("机器学习很有趣 machine learning") == "en"
     assert get_source_target("en") == ("en", "zh")
     assert get_source_target("zh") == ("zh", "en")
 
